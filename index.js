@@ -2,7 +2,11 @@ const express = require('express');
 const app = express()
 const router = express.Router();
 const mongoClient = require('mongodb').MongoClient
+const cors = require('cors');
 let db;
+
+router.use(cors());
+app.use(cors());
 const url = 'mongodb+srv://ini:Kikalka1a2@cluster0.ndldf.mongodb.net/test';
 mongoClient.connect(url, (err, client) => {
     if(err != null)
@@ -10,24 +14,26 @@ mongoClient.connect(url, (err, client) => {
         console.log(err.message);
         throw err;
     }
-    db =  client.db('MyDB')
+    db =  client.db('vineyard')
     console.log('connected to db')
 })
 app.listen(8000, () => {
     console.log('running')
 })
-
-router.route('/pokemon')
+// humidity, temperature, battery percentage,(gps), time?????? device id? 
+router.route('/vineyard')
     .get((req, res) => {
-        db.collection('pokemon').find(req.query).toArray(function (err, pokemon){
-            res.json(pokemon)
+        console.log("read");
+        db.collection('readings').find({temp : { $lt: 100}}, {projection: {temp: 1, humidity: 1}}).toArray(function (err, readings){//req.query).toArray(function (err, readings){
+            console.log(readings)
+            res.json(readings)
         })
     })
     .post((req, res) => {
         console.log(req.query)
-        var newUser = req.query 
-        db.collection('pokemon').insert(newUser, function (err, pokemon){
-            res.json(pokemon)
+        var newReading = req.query 
+        db.collection('readings').insert(newReading, function (err, readings){
+            res.json(readings)
         })
     })
 
@@ -51,6 +57,10 @@ router.route('/pokemon/:id')
             res.json(pokemon)
         })
     })
-
-app.use('/api', router)
-
+app.use('/api', router);
+app.use(function(req, res, next) {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+    next();
+    });
+    
